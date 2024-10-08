@@ -1,0 +1,9 @@
+{
+    "name": "Parry",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/CellSkippers/Parry",
+    "description": "Parry enemy attacks!",
+    "dependencies": [
+        "BepInEx-BepInExPack_GTFO-3.2.1"
+    ]
+}
