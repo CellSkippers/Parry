@@ -1,5 +1,7 @@
 # Parry
 
+A parry plugin for GTFO.
+
 ## Contributing
 
 Change the target r2modman profile in `Parry/Parry.csproj` to your desired
