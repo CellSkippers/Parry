@@ -22,6 +22,10 @@ internal static class Patch
     public static float parryBulletStaggerMultiplier;
     public static float parryBulletFalloffStart;
     public static float parryBulletFalloffEnd;
+    public static float parryHealMulti;
+    public static float parryMainAmmoMulti;
+    public static float parrySpecAmmoMulti;
+    public static float parryToolMulti;
 
     private static float shoveTime;
 
@@ -37,10 +41,14 @@ internal static class Patch
         // Play the parry sound.
         localPlayerAgent.Sound.Post(1256202815, true);
 
-        // Heal the player.
+        // Give health, ammo and tool to the player.
         float damageTaken = damageData.damage.Get(1f);
-        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * 1f);
-        localPlayerAgent.GiveAmmoRel(localPlayerAgent, damageTaken * 0.25f, damageTaken * 0.25f, damageTaken * 0.25f);
+        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
+        localPlayerAgent.GiveAmmoRel(localPlayerAgent,
+            damageTaken * parryMainAmmoMulti / 5f,  // Main.
+            damageTaken * parrySpecAmmoMulti / 5f,  // Special.
+            damageTaken * parryToolMulti / 5f       // Tool.
+        );  // Division by 5 turns (damageTaken * multi) into % of regular refill pack.
 
         // Parry the attack.
         damageData.source.TryGet(out Agent damagingAgent);

@@ -46,5 +46,17 @@ public class Plugin : BasePlugin
         Patch.parryBulletFalloffEnd = configFile.Bind<float>(
             "Bullet", "parryBulletFalloffEnd", 100f,
             "The falloff end distance of the bullet for parrying projectiles.").Value;
+        Patch.parryHealMulti = configFile.Bind<float>(
+            "OnParry", "parryHealMulti", 1f,
+            "The multiplier for receiving health on a successful parry.\n(Default value gives damage-of-hit percent health.)").Value;
+        Patch.parryMainAmmoMulti = configFile.Bind<float>(
+            "OnParry", "parryMainAmmoMulti", 1f,
+            "The multiplier for receiving main ammo on a successful parry.\n(Default value gives damage-of-hit percent of a regular ammo pack.)").Value;
+        Patch.parrySpecAmmoMulti = configFile.Bind<float>(
+            "OnParry", "parrySpecAmmoMulti", 1f,
+            "The multiplier for receiving special ammo on a successful parry.\n(Default value gives damage-of-hit percent of a regular ammo pack.)").Value;
+        Patch.parryToolMulti = configFile.Bind<float>(
+            "OnParry", "parryToolMulti", 1f,
+            "The multiplier for receiving tool on a successful parry.\n(Default value gives damage-of-hit percent of a regular tool pack.)").Value;
     }
 }
