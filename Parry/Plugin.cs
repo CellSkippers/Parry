@@ -26,25 +26,25 @@ public class Plugin : BasePlugin
     {
         ConfigFile configFile = new(Path.Combine(Paths.ConfigPath, GUID + ".cfg"), true);
         Patch.parryExplosionDamage = configFile.Bind<float>(
-            "Damage", "parryExplosionDamage", 100.01f,
+            "Explosion", "parryExplosionDamage", 100.01f,
             "The damage of the explosion for parrying tentacles.").Value;
         Patch.parryExplosionRadius = configFile.Bind<float>(
-            "Damage", "parryExplosionRadius", 2f,
+            "Explosion", "parryExplosionRadius", 2f,
             "The radius of the explosion for parrying tentacles.").Value;
         Patch.parryBulletDamage = configFile.Bind<float>(
-            "Damage", "parryBulletDamage", 150.01f,
+            "Bullet", "parryBulletDamage", 150.01f,
             "The damage of the bullet for parrying projectiles.").Value;
         Patch.parryBulletPrecisionMultiplier = configFile.Bind<float>(
-            "Damage", "parryBulletPrecisionMultiplier", 1f,
+            "Bullet", "parryBulletPrecisionMultiplier", 1f,
             "The precision multiplier of the bullet for parrying projectiles.").Value;
         Patch.parryBulletStaggerMultiplier = configFile.Bind<float>(
-            "Damage", "parryBulletStaggerMultiplier", 1f,
+            "Bullet", "parryBulletStaggerMultiplier", 1f,
             "The stagger multiplier of the bullet for parrying projectiles.").Value;
         Patch.parryBulletFalloffStart = configFile.Bind<float>(
-            "Damage", "parryBulletFalloffStart", 40f,
+            "Bullet", "parryBulletFalloffStart", 40f,
             "The falloff start distance of the bullet for parrying projectiles.").Value;
         Patch.parryBulletFalloffEnd = configFile.Bind<float>(
-            "Damage", "parryBulletFalloffEnd", 100f,
+            "Bullet", "parryBulletFalloffEnd", 100f,
             "The falloff end distance of the bullet for parrying projectiles.").Value;
     }
 }
