@@ -85,6 +85,9 @@ internal static class Patch
             if (rigidbodyComponent)
                 rigidbodyComponent.AddExplosionForce(explosionForce, sourcePos, radius, 3f);
 
+            if (tempCollider.GetComponent<Dam_PlayerDamageLocal>())
+                continue;
+            
             IDamageable iDamageableComponent = tempCollider.GetComponent<IDamageable>();
             if (iDamageableComponent != null)
             {
