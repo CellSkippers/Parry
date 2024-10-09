@@ -14,12 +14,10 @@ internal static class Patch
     private const float PARRYDURATION = 0.3f;
 
     private static float shoveTime;
-    private static bool parrySuccess = false;
 
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
     private static bool SuccessfullyParry(pMediumDamageData damageData, bool isTentacle)
     {
-        parrySuccess = true;
         PlayerAgent localPlayerAgent = PlayerManager.GetLocalPlayerAgent();
 
         // Play the parry sound.
@@ -36,7 +34,7 @@ internal static class Patch
         {
             // Parried a tentacle, explode the enemy.
             //DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
-            DoExplosionDamage(damagingAgent.Position, 2f, 100f, 1500f);
+            DoExplosionDamage(damagingAgent.Position, 2f, 30.1f, 1500f);
         }
         else
         {
@@ -63,7 +61,6 @@ internal static class Patch
             FX_Manager.PlayLocalVersion = false;
             BulletWeapon.s_tracerPool.AquireEffect().Play((FX_Trigger)null, localPlayerAgent.EyePosition, Quaternion.LookRotation(parryShot.fireDir));
         }
-        parrySuccess = false;
 
         // Don't run the original receive damage method - player doesn't take the damage.
         return false;
@@ -85,6 +82,7 @@ internal static class Patch
             if (rigidbodyComponent)
                 rigidbodyComponent.AddExplosionForce(explosionForce, sourcePos, radius, 3f);
 
+            //Don't move towards applying damage if target is a player
             if (tempCollider.GetComponent<Dam_PlayerDamageLocal>())
                 continue;
             
@@ -140,18 +138,6 @@ internal static class Patch
         if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
         {
             return SuccessfullyParry(data, true);
-        }
-        return true;
-    }
-
-    [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveExplosionDamage))]
-    [HarmonyPrefix]
-    public static bool IgnoreParryExplosionDamage()
-    {
-        Logger.DebugOnly("Received explosion damage.");
-        if (parrySuccess)
-        {
-            return false;
         }
         return true;
     }
