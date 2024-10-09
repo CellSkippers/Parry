@@ -85,33 +85,30 @@ internal static class Patch
         {
             Collider tempCollider = DamageUtil.s_tempColliders[index];
 
+            // Don't move towards applying damage if target is a player.
+            if (tempCollider.GetComponent<Dam_PlayerDamageLocal>())
+                continue;
+
+            // Add force to rigid bodies.
             Rigidbody rigidbodyComponent = tempCollider.GetComponent<Rigidbody>();
             if (rigidbodyComponent)
                 rigidbodyComponent.AddExplosionForce(explosionForce, sourcePos, radius, 3f);
-
-            //Don't move towards applying damage if target is a player
-            if (tempCollider.GetComponent<Dam_PlayerDamageLocal>())
-                continue;
             
+            // Deal damage!
             IDamageable iDamageableComponent = tempCollider.GetComponent<IDamageable>();
             if (iDamageableComponent != null)
             {
                 IDamageable baseDamagable = iDamageableComponent.GetBaseDamagable();
                 Logger.DebugOnly("baseDam: " + baseDamagable + " baseDam.TempSearchID: " + baseDamagable?.TempSearchID + " searchID: " + DamageUtil.SearchID);
-                if (baseDamagable != null)
+                if (baseDamagable != null && baseDamagable.TempSearchID != DamageUtil.SearchID)
                 {
-                    if (baseDamagable.TempSearchID != DamageUtil.SearchID)
+                    Vector3 explosionVector = iDamageableComponent.DamageTargetPos - sourcePos;
+                    if (!Physics.Raycast(sourcePos, explosionVector.normalized, out RaycastHit hitInfo, explosionVector.magnitude, LayerManager.MASK_EXPLOSION_BLOCKERS) || hitInfo.collider == tempCollider)
                     {
-                        Vector3 vector3 = iDamageableComponent.DamageTargetPos - sourcePos;
-                        if (!Physics.Raycast(sourcePos, vector3.normalized, out RaycastHit hitInfo, vector3.magnitude, LayerManager.MASK_EXPLOSION_BLOCKERS) || hitInfo.collider == tempCollider)
-                        {
-                            baseDamagable.TempSearchID = DamageUtil.SearchID;
-                            iDamageableComponent.ExplosionDamage(damage, sourcePos, Vector3.up * explosionForce);
-                        }
+                        baseDamagable.TempSearchID = DamageUtil.SearchID;
+                        iDamageableComponent.ExplosionDamage(damage, sourcePos, Vector3.up * explosionForce);
                     }
                 }
-                else
-                    Logger.DebugOnly("DoExplosionDamage got IDamageable that has no baseDam..");
             }
         }
     }
