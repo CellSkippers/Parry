@@ -13,6 +13,8 @@ internal static class Patch
 {
     private const float PARRYDURATION = 0.3f;
 
+    public static bool parryEnabled = true;
+
     public static float parryExplosionDamage;
     public static float parryBulletDamage;
     public static float parryBulletPrecisionMultiplier;
@@ -25,6 +27,10 @@ internal static class Patch
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
     private static bool SuccessfullyParry(pMediumDamageData damageData, bool isTentacle)
     {
+        // Parry not enabled, do nothing and run the original receive damage method.
+        if (!parryEnabled)
+            return true;
+
         PlayerAgent localPlayerAgent = PlayerManager.GetLocalPlayerAgent();
 
         // Play the parry sound.
