@@ -16,6 +16,7 @@ internal static class Patch
     public static bool parryEnabled = true;
 
     public static float parryExplosionDamage;
+    public static float parryExplosionRadius;
     public static float parryBulletDamage;
     public static float parryBulletPrecisionMultiplier;
     public static float parryBulletStaggerMultiplier;
@@ -47,7 +48,7 @@ internal static class Patch
         {
             // Parried a tentacle, explode the enemy.
             //DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
-            DoExplosionDamage(damagingAgent.Position, 2f, parryExplosionDamage, 1500f);
+            DoExplosionDamage(damagingAgent.Position, parryExplosionRadius, parryExplosionDamage, 1500f);
         }
         else
         {

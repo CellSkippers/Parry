@@ -28,6 +28,9 @@ public class Plugin : BasePlugin
         Patch.parryExplosionDamage = configFile.Bind<float>(
             "Damage", "parryExplosionDamage", 100.01f,
             "The damage of the explosion for parrying tentacles.").Value;
+        Patch.parryExplosionRadius = configFile.Bind<float>(
+            "Damage", "parryExplosionRadius", 2f,
+            "The radius of the explosion for parrying tentacles.").Value;
         Patch.parryBulletDamage = configFile.Bind<float>(
             "Damage", "parryBulletDamage", 150.01f,
             "The damage of the bullet for parrying projectiles.").Value;
