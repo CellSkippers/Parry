@@ -55,7 +55,6 @@ internal static class Patch
         if (damagingAgent != null && isTentacle)
         {
             // Parried a tentacle, explode the enemy.
-            //DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
             DoExplosionDamage(damagingAgent.Position, parryExplosionRadius, parryExplosionDamage, 1500f);
         }
         else
