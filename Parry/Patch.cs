@@ -22,6 +22,8 @@ internal static class Patch
     {
         parrySuccess = true;
         PlayerAgent localPlayerAgent = PlayerManager.GetLocalPlayerAgent();
+
+        // Play the parry sound.
         localPlayerAgent.Sound.Post(1256202815, true);
 
         // Heal the player.
@@ -29,15 +31,17 @@ internal static class Patch
         localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * 1f);
         localPlayerAgent.GiveAmmoRel(localPlayerAgent, damageTaken * 0.25f, damageTaken * 0.25f, damageTaken * 0.25f);
 
-        // Explode the enemy.
+        // Parry the attack.
         damageData.source.TryGet(out Agent damagingAgent);
         if (damagingAgent != null && isTentacle)
         {
+            // Parried a tentacle, explode the enemy.
             DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
         }
         else
         {
-            Weapon.WeaponHitData parryShot = new Weapon.WeaponHitData()
+            // Parried a projectile, fire a shot.
+            Weapon.WeaponHitData parryShot = new()
             {
                 randomSpread = 0,
                 maxRayDist = 100f
@@ -100,8 +104,9 @@ internal static class Patch
 
     [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveExplosionDamage))]
     [HarmonyPrefix]
-    public static bool IgnoreParryExplosionDamage(pExplosionDamageData data)
+    public static bool IgnoreParryExplosionDamage()
     {
+        Logger.DebugOnly("Received explosion damage.");
         if (parrySuccess)
         {
             return false;
