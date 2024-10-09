@@ -13,6 +13,13 @@ internal static class Patch
 {
     private const float PARRYDURATION = 0.3f;
 
+    public static float parryExplosionDamage;
+    public static float parryBulletDamage;
+    public static float parryBulletPrecisionMultiplier;
+    public static float parryBulletStaggerMultiplier;
+    public static float parryBulletFalloffStart;
+    public static float parryBulletFalloffEnd;
+
     private static float shoveTime;
 
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
@@ -34,7 +41,7 @@ internal static class Patch
         {
             // Parried a tentacle, explode the enemy.
             //DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
-            DoExplosionDamage(damagingAgent.Position, 2f, 30.1f, 1500f);
+            DoExplosionDamage(damagingAgent.Position, 2f, parryExplosionDamage, 1500f);
         }
         else
         {
@@ -47,10 +54,10 @@ internal static class Patch
             Vector3 originPos = localPlayerAgent.FPSCamera.Position;
             parryShot.fireDir = (localPlayerAgent.FPSCamera.CameraRayPos - originPos).normalized;
             parryShot.owner = localPlayerAgent;
-            parryShot.damage = 150.1f;
-            parryShot.staggerMulti = 1f;
-            parryShot.precisionMulti = 1f;
-            parryShot.damageFalloff = new Vector2(40, 100);
+            parryShot.damage = parryBulletDamage;
+            parryShot.staggerMulti = parryBulletPrecisionMultiplier;
+            parryShot.precisionMulti = parryBulletStaggerMultiplier;
+            parryShot.damageFalloff = new Vector2(parryBulletFalloffStart, parryBulletFalloffEnd);
             if (Weapon.CastWeaponRay(localPlayerAgent.FPSCamera.transform, ref parryShot, originPos))
             {
                 BulletWeapon.BulletHit(parryShot, true);
