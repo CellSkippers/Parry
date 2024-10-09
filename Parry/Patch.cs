@@ -14,7 +14,6 @@ internal static class Patch
     private const float PARRYDURATION = 0.3f;
 
     private static float shoveTime;
-
     private static bool parrySuccess = false;
 
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
@@ -36,7 +35,8 @@ internal static class Patch
         if (damagingAgent != null && isTentacle)
         {
             // Parried a tentacle, explode the enemy.
-            DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
+            //DamageUtil.DoExplosionDamage(damagingAgent.Position, 2f, 100f, LayerManager.MASK_EXPLOSION_TARGETS, LayerManager.MASK_EXPLOSION_BLOCKERS, true, 1500f);
+            DoExplosionDamage(damagingAgent.Position, 2f, 100f, 1500f);
         }
         else
         {
@@ -67,6 +67,45 @@ internal static class Patch
 
         // Don't run the original receive damage method - player doesn't take the damage.
         return false;
+    }
+
+    public static void DoExplosionDamage(Vector3 sourcePos, float radius, float damage, float explosionForce)
+    {
+        Logger.DebugOnly("Doing custom explosion damage.");
+        int numCollidersHit = Physics.OverlapSphereNonAlloc(sourcePos, radius, DamageUtil.s_tempColliders, LayerManager.MASK_EXPLOSION_TARGETS);
+        if (numCollidersHit < 1)
+            return;
+
+        DamageUtil.IncrementSearchID();
+        for (int index = 0; index < numCollidersHit; ++index)
+        {
+            Collider tempCollider = DamageUtil.s_tempColliders[index];
+
+            Rigidbody rigidbodyComponent = tempCollider.GetComponent<Rigidbody>();
+            if (rigidbodyComponent)
+                rigidbodyComponent.AddExplosionForce(explosionForce, sourcePos, radius, 3f);
+
+            IDamageable iDamageableComponent = tempCollider.GetComponent<IDamageable>();
+            if (iDamageableComponent != null)
+            {
+                IDamageable baseDamagable = iDamageableComponent.GetBaseDamagable();
+                Logger.DebugOnly("baseDam: " + baseDamagable + " baseDam.TempSearchID: " + baseDamagable?.TempSearchID + " searchID: " + DamageUtil.SearchID);
+                if (baseDamagable != null)
+                {
+                    if (baseDamagable.TempSearchID != DamageUtil.SearchID)
+                    {
+                        Vector3 vector3 = iDamageableComponent.DamageTargetPos - sourcePos;
+                        if (!Physics.Raycast(sourcePos, vector3.normalized, out RaycastHit hitInfo, vector3.magnitude, LayerManager.MASK_EXPLOSION_BLOCKERS) || hitInfo.collider == tempCollider)
+                        {
+                            baseDamagable.TempSearchID = DamageUtil.SearchID;
+                            iDamageableComponent.ExplosionDamage(damage, sourcePos, Vector3.up * explosionForce);
+                        }
+                    }
+                }
+                else
+                    Logger.DebugOnly("DoExplosionDamage got IDamageable that has no baseDam..");
+            }
+        }
     }
 
     [HarmonyPatch(typeof(MWS_Push), nameof(MWS_Push.Enter))]
