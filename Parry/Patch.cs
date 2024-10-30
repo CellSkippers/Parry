@@ -100,7 +100,7 @@ internal static class Patch
             Collider tempCollider = DamageUtil.s_tempColliders[index];
 
             // Don't move towards applying damage if target is a player.
-            if (tempCollider.GetComponent<Dam_PlayerDamageLocal>())
+            if (tempCollider.GetComponent<Dam_PlayerDamageBase>() || tempCollider.GetComponent<Dam_PlayerDamageLimb>())
                 continue;
 
             // Add force to rigid bodies.
