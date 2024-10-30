@@ -159,4 +159,35 @@ internal static class Patch
         }
         return true;
     }
+
+    // TODO: Add explanation of why we need this for clients.
+    [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
+    [HarmonyPrefix]
+    public static bool ParrySetHealth(Dam_PlayerDamageLocal __instance, pSetHealthData data)
+    {
+        Logger.DebugOnly("Received set health. Trying to set health to: " + data.health.Get(__instance.HealthMax) + " with current health of: " + __instance.Health);
+        float tookDamageTime = Clock.Time;
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        {
+            if (data.health.Get(__instance.HealthMax) < __instance.Health)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // TODO: Add explanation of why we need this for clients.
+    [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetDead))]
+    [HarmonyPrefix]
+    public static bool ParrySetDead()
+    {
+        Logger.DebugOnly("Received set dead.");
+        float tookDamageTime = Clock.Time;
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        {
+            return false;
+        }
+        return true;
+    }
 }
