@@ -4,6 +4,7 @@ using Gear;
 using HarmonyLib;
 using Player;
 using UnityEngine;
+using SNetwork;
 
 #nullable disable
 namespace Parry;
@@ -43,7 +44,13 @@ internal static class Patch
 
         // Give health, ammo and tool to the player.
         float damageTaken = damageData.damage.Get(1f);
-        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
+
+        //If host, act normal
+        if (SNetwork.SNet.IsMaster)
+            localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
+        //If client, heal extra to make up for host damage handling
+        else
+            localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti + damageTaken);
         localPlayerAgent.GiveAmmoRel(localPlayerAgent,
             damageTaken * parryMainAmmoMulti / 5f,  // Main.
             damageTaken * parrySpecAmmoMulti / 5f,  // Special.
@@ -160,24 +167,7 @@ internal static class Patch
         return true;
     }
 
-    // TODO: Add explanation of why we need this for clients.
-    [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetHealth))]
-    [HarmonyPrefix]
-    public static bool ParrySetHealth(Dam_PlayerDamageLocal __instance, pSetHealthData data)
-    {
-        Logger.DebugOnly("Received set health. Trying to set health to: " + data.health.Get(__instance.HealthMax) + " with current health of: " + __instance.Health);
-        float tookDamageTime = Clock.Time;
-        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
-        {
-            if (data.health.Get(__instance.HealthMax) < __instance.Health)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // TODO: Add explanation of why we need this for clients.
+    //Ensure clients are not killed/trading with enemies based off hosts perception of them parrying
     [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveSetDead))]
     [HarmonyPrefix]
     public static bool ParrySetDead()
