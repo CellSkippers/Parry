@@ -9,6 +9,13 @@ using SNetwork;
 #nullable disable
 namespace Parry;
 
+enum ParryType
+{
+    Tentacle,
+    Projectile,
+    Bullet
+}
+
 [HarmonyPatch]
 internal static class Patch
 {
@@ -27,11 +34,12 @@ internal static class Patch
     public static float parryMainAmmoMulti;
     public static float parrySpecAmmoMulti;
     public static float parryToolMulti;
+    public static float parryFriendlyBulletMulti;
 
     private static float shoveTime;
 
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
-    private static bool SuccessfullyParry(pMediumDamageData damageData, bool isTentacle)
+    private static bool SuccessfullyParry(Agent damagingAgent, float damageTaken, ParryType parried)
     {
         // Parry not enabled, do nothing and run the original receive damage method.
         if (!parryEnabled)
@@ -42,52 +50,98 @@ internal static class Patch
         // Play the parry sound.
         localPlayerAgent.Sound.Post(1256202815, true);
 
-        // Give health, ammo and tool to the player.
-        float damageTaken = damageData.damage.Get(1f);
-
-        //If host, act normal
-        if (SNetwork.SNet.IsMaster)
-            localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
-        //If client, heal extra to make up for host damage handling
-        else
-            localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti + damageTaken);
-        localPlayerAgent.GiveAmmoRel(localPlayerAgent,
-            damageTaken * parryMainAmmoMulti / 5f,  // Main.
-            damageTaken * parrySpecAmmoMulti / 5f,  // Special.
-            damageTaken * parryToolMulti / 5f       // Tool.
-        );  // Division by 5 turns (damageTaken * multi) into % of regular refill pack.
-
-        // Parry the attack.
-        damageData.source.TryGet(out Agent damagingAgent);
-        if (damagingAgent != null && isTentacle)
+        switch(parried)
         {
-            // Parried a tentacle, explode the enemy.
-            DoExplosionDamage(damagingAgent.Position, parryExplosionRadius, parryExplosionDamage, 1500f);
-        }
-        else
-        {
-            // Parried a projectile, fire a shot.
-            Weapon.WeaponHitData parryShot = new()
-            {
-                randomSpread = 0,
-                maxRayDist = 100f
-            };
-            Vector3 originPos = localPlayerAgent.FPSCamera.Position;
-            parryShot.fireDir = (localPlayerAgent.FPSCamera.CameraRayPos - originPos).normalized;
-            parryShot.owner = localPlayerAgent;
-            parryShot.damage = parryBulletDamage;
-            parryShot.staggerMulti = parryBulletPrecisionMultiplier;
-            parryShot.precisionMulti = parryBulletStaggerMultiplier;
-            parryShot.damageFalloff = new Vector2(parryBulletFalloffStart, parryBulletFalloffEnd);
-            if (Weapon.CastWeaponRay(localPlayerAgent.FPSCamera.transform, ref parryShot, originPos))
-            {
-                BulletWeapon.BulletHit(parryShot, true);
-                FX_Manager.EffectTargetPosition = parryShot.rayHit.point;
-            }
-            else
-                FX_Manager.EffectTargetPosition = localPlayerAgent.FPSCamera.CameraRayPos;
-            FX_Manager.PlayLocalVersion = false;
-            BulletWeapon.s_tracerPool.AquireEffect().Play((FX_Trigger)null, localPlayerAgent.EyePosition, Quaternion.LookRotation(parryShot.fireDir));
+            case ParryType.Tentacle:
+                {
+                    //If host, heal relative to damage taken
+                    if (SNetwork.SNet.IsMaster)
+                        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
+                    //If client, heal extra to compensate for host's perception of damage taken
+                    else
+                        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti + damageTaken);
+                    //Give main/special/tool ammo respectively
+                    localPlayerAgent.GiveAmmoRel(localPlayerAgent,
+                    damageTaken * parryMainAmmoMulti / 5f,
+                    damageTaken * parrySpecAmmoMulti / 5f,
+                    damageTaken * parryToolMulti / 5f
+                    );
+                    
+                    //Tentacle parries explode the enemy
+                    if (damagingAgent != null)
+                        DoExplosionDamage(damagingAgent.Position, parryExplosionRadius, parryExplosionDamage, 1500f);
+
+                    break;
+                }
+            case ParryType.Projectile:
+                {
+                    if (SNetwork.SNet.IsMaster)
+                        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti);
+                    else
+                        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken * parryHealMulti + damageTaken);
+                    localPlayerAgent.GiveAmmoRel(localPlayerAgent,
+                    damageTaken * parryMainAmmoMulti / 5f,
+                    damageTaken * parrySpecAmmoMulti / 5f,
+                    damageTaken * parryToolMulti / 5f
+                    );
+
+                    //Projectile parries shoot a static damage bullet
+                    Weapon.WeaponHitData parryShot = new()
+                    {
+                        randomSpread = 0,
+                        maxRayDist = 100f
+                    };
+                    Vector3 originPos = localPlayerAgent.FPSCamera.Position;
+                    parryShot.fireDir = (localPlayerAgent.FPSCamera.CameraRayPos - originPos).normalized;
+                    parryShot.owner = localPlayerAgent;
+                    parryShot.damage = parryBulletDamage;
+                    parryShot.staggerMulti = parryBulletStaggerMultiplier;
+                    parryShot.precisionMulti = parryBulletPrecisionMultiplier;
+                    parryShot.damageFalloff = new Vector2(parryBulletFalloffStart, parryBulletFalloffEnd);
+                    if (Weapon.CastWeaponRay(localPlayerAgent.FPSCamera.transform, ref parryShot, originPos))
+                    {
+                        BulletWeapon.BulletHit(parryShot, true);
+                        FX_Manager.EffectTargetPosition = parryShot.rayHit.point;
+                    }
+                    else
+                        FX_Manager.EffectTargetPosition = localPlayerAgent.FPSCamera.CameraRayPos;
+                    FX_Manager.PlayLocalVersion = false;
+                    BulletWeapon.s_tracerPool.AquireEffect().Play((FX_Trigger)null, localPlayerAgent.EyePosition, Quaternion.LookRotation(parryShot.fireDir));
+
+                    break;
+                }
+            case ParryType.Bullet:
+                {
+                    if (!SNetwork.SNet.IsMaster)
+                        localPlayerAgent.GiveHealth(localPlayerAgent, damageTaken);
+
+                    //Parried friendly fire shoots a new bullet with damage scaled up based off the bullet parried
+                    Weapon.WeaponHitData parryShot = new()
+                    {
+                        randomSpread = 0,
+                        maxRayDist = 100f
+                    };
+                    Vector3 originPos = localPlayerAgent.FPSCamera.Position;
+                    parryShot.fireDir = (localPlayerAgent.FPSCamera.CameraRayPos - originPos).normalized;
+                    parryShot.owner = localPlayerAgent;
+                    //Scaled by 50 to compensate for player health and friendly fire scalings
+                    parryShot.damage = damageTaken * 50f * parryFriendlyBulletMulti;
+                    Logger.DebugOnly(parryShot.damage);
+                    parryShot.staggerMulti = 1f;
+                    parryShot.precisionMulti = 2f;
+                    parryShot.damageFalloff = new Vector2(80f, 100f);
+                    if (Weapon.CastWeaponRay(localPlayerAgent.FPSCamera.transform, ref parryShot, originPos))
+                    {
+                        BulletWeapon.BulletHit(parryShot, true);
+                        FX_Manager.EffectTargetPosition = parryShot.rayHit.point;
+                    }
+                    else
+                        FX_Manager.EffectTargetPosition = localPlayerAgent.FPSCamera.CameraRayPos;
+                    FX_Manager.PlayLocalVersion = false;
+                    BulletWeapon.s_tracerPool.AquireEffect().Play((FX_Trigger)null, localPlayerAgent.EyePosition, Quaternion.LookRotation(parryShot.fireDir));
+
+                    break;
+                }
         }
 
         // Don't run the original receive damage method - player doesn't take the damage.
@@ -149,7 +203,7 @@ internal static class Patch
         float tookDamageTime = Clock.Time;
         if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
         {
-            return SuccessfullyParry(data, false);
+            return SuccessfullyParry(null, data.damage.Get(1f), ParryType.Projectile);
         }
         return true;
     }
@@ -162,7 +216,21 @@ internal static class Patch
         float tookDamageTime = Clock.Time;
         if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
         {
-            return SuccessfullyParry(data, true);
+            data.source.TryGet(out Agent damagingAgent);
+            return SuccessfullyParry(damagingAgent, data.damage.Get(1f), ParryType.Tentacle);
+        }
+        return true;
+    }
+
+    [HarmonyPatch(typeof(Dam_PlayerDamageLocal), nameof(Dam_PlayerDamageLocal.ReceiveBulletDamage))]
+    [HarmonyPrefix]
+    public static bool ParryBulletAttackDamage(pBulletDamageData data)
+    {
+        Logger.DebugOnly("Received bullet attack damage.");
+        float tookDamageTime = Clock.Time;
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        {
+            return SuccessfullyParry(null, data.damage.Get(1f), ParryType.Bullet);
         }
         return true;
     }

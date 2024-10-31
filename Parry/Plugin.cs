@@ -58,5 +58,8 @@ public class Plugin : BasePlugin
         Patch.parryToolMulti = configFile.Bind<float>(
             "OnParry", "parryToolMulti", 1f,
             "The multiplier for receiving tool on a successful parry.\n(Default value gives damage-of-hit percent of a regular tool pack.)").Value;
+        Patch.parryFriendlyBulletMulti = configFile.Bind<float>(
+            "OnParry", "parryFriendlyBulletMulti", 4f,
+            "The damage multiplier for the bullet produced by parrying someone else's bullet.\n(Default value multiplies damage by 4.)").Value;
     }
 }
