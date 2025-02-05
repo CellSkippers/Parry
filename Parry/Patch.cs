@@ -9,7 +9,7 @@ using SNetwork;
 #nullable disable
 namespace Parry;
 
-enum ParryType
+public enum ParryType
 {
     Tentacle,
     Projectile,
@@ -17,12 +17,11 @@ enum ParryType
 }
 
 [HarmonyPatch]
-internal static class Patch
+public static class Patch
 {
-    private const float PARRYDURATION = 0.3f;
-
     public static bool parryEnabled = true;
 
+    public static float parryDuration = 0.3f;
     public static float parryExplosionDamage;
     public static float parryExplosionRadius;
     public static float parryBulletDamage;
@@ -36,10 +35,10 @@ internal static class Patch
     public static float parryToolMulti;
     public static float parryFriendlyBulletMulti;
 
-    private static float shoveTime;
+    public static float shoveTime;
 
     // Return value is used by the relevant receive damage prefix to determine whether the original receive damage method should run.
-    private static bool SuccessfullyParry(Agent damagingAgent, float damageTaken, ParryType parried)
+    public static bool SuccessfullyParry(Agent damagingAgent, float damageTaken, ParryType parried)
     {
         // Parry not enabled, do nothing and run the original receive damage method.
         if (!parryEnabled)
@@ -201,7 +200,7 @@ internal static class Patch
     {
         Logger.DebugOnly("Received shooter projectile damage.");
         float tookDamageTime = Clock.Time;
-        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < parryDuration)
         {
             return SuccessfullyParry(null, data.damage.Get(1f), ParryType.Projectile);
         }
@@ -214,7 +213,7 @@ internal static class Patch
     {
         Logger.DebugOnly("Received tentacle attack damage.");
         float tookDamageTime = Clock.Time;
-        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < parryDuration)
         {
             data.source.TryGet(out Agent damagingAgent);
             return SuccessfullyParry(damagingAgent, data.damage.Get(1f), ParryType.Tentacle);
@@ -228,7 +227,7 @@ internal static class Patch
     {
         Logger.DebugOnly("Received bullet attack damage.");
         float tookDamageTime = Clock.Time;
-        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < parryDuration)
         {
             return SuccessfullyParry(null, data.damage.Get(1f), ParryType.Bullet);
         }
@@ -242,7 +241,7 @@ internal static class Patch
     {
         Logger.DebugOnly("Received set dead.");
         float tookDamageTime = Clock.Time;
-        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < PARRYDURATION)
+        if (tookDamageTime > shoveTime && tookDamageTime - shoveTime < parryDuration)
         {
             return false;
         }
