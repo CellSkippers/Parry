@@ -1,3 +1,7 @@
+### v1.1.1
+
+Made more fields public to allow external plugins to further customize how parry works
+
 ### v1.1.0
 
 Added parrying friendly fire to the mod, fires a bullet scaled to the damage you would've taken
