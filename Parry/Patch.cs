@@ -4,7 +4,6 @@ using Gear;
 using HarmonyLib;
 using Player;
 using UnityEngine;
-using SNetwork;
 
 #nullable disable
 namespace Parry;
